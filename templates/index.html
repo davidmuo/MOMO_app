@@ -12,7 +12,7 @@
     <script defer src="../static/script.js"></script>
 </head>
 <body>
-    <header> 
+    <header>
         <div class="logo-container">
             <img src="../static/logo.png" alt="MoMo Logo" class="logo">
             <h1>MoMo Dashboard</h1>
@@ -27,15 +27,16 @@
                 <option value="Transfer To Mobile Number">Transfer</option>
                 <option value="Cash Power">Cash Power</option>
                 <option value="Airtime Bill">Airtime Bill</option>
-                <option value="Payment To Code">Payment To Code</option>
+                <option value="Payment to Code">Payment to Code</option>
                 <option value="Incoming Money">Incoming Money</option>
-                <option value="Transaction Initiated by Third Party">Transaction Initiated by Third Party</option>
-                <option value="Internet and Voice Bundle">Internet and Voice Bundle</option>
+                <option value="Transaction Initiated by Third Party">Third Party</option>
+                <option value="Internet and Voice Bundle">Bundle</option>
                 <option value="OTP Message">OTP Messages</option>
                 <option value="Other">Other</option>
             </select>
-            <button id="apply-filters">Apply</button>
-            <button id="clear-filters">Clear</button>
+            <button id="apply-filters"><i class="fas fa-filter"></i> Apply</button>
+            <button id="clear-filters"><i class="fas fa-times"></i> Clear</button>
+            <button id="export-csv"><i class="fas fa-download"></i> Export CSV</button>
         </div>
     </header>
 
@@ -43,19 +44,53 @@
         <aside class="sidebar">
             <nav>
                 <ul>
-                    <li class="active"><a href="#"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="#transactions"><i class="fas fa-exchange-alt"></i> Transactions</a></li>
+                    <li><a href="#stats"><i class="fas fa-chart-line"></i> Overview</a></li>
                     <li><a href="#analytics"><i class="fas fa-chart-pie"></i> Analytics</a></li>
+                    <li><a href="#trends"><i class="fas fa-calendar-alt"></i> Monthly Trends</a></li>
+                    <li><a href="#transactions"><i class="fas fa-exchange-alt"></i> Recent</a></li>
                     <li><a href="#all-transactions"><i class="fas fa-table"></i> All Data</a></li>
                 </ul>
             </nav>
         </aside>
 
         <main>
+            <!-- Stats Cards -->
+            <section class="stats-cards" id="stats">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-receipt"></i></div>
+                    <div class="card-content">
+                        <h3>Total Transactions</h3>
+                        <div class="number" id="stat-total-tx">—</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-coins"></i></div>
+                    <div class="card-content">
+                        <h3>Total Volume</h3>
+                        <div class="number" id="stat-total-amount">—</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                    <div class="card-content">
+                        <h3>Total Fees Paid</h3>
+                        <div class="number" id="stat-total-fees">—</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-star"></i></div>
+                    <div class="card-content">
+                        <h3>Top Transaction Type</h3>
+                        <div class="number stat-text" id="stat-top-type">—</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts -->
             <section class="charts-grid" id="analytics">
                 <div class="chart-container">
                     <div class="chart-header">
-                        <h3>Transaction Charts</h3>
+                        <h3>Transaction Types</h3>
                         <div class="chart-controls">
                             <button class="active" data-type="bar">Bar</button>
                             <button data-type="pie">Pie</button>
@@ -63,14 +98,22 @@
                     </div>
                     <canvas id="transactionTypeChart"></canvas>
                 </div>
-                <!-- <div class="chart-container">
-                    <div class="chart-header">
-                        <h3>Transaction Trends</h3>
-                    </div>
-                    <canvas id="transactionTrendChart"></canvas>
-                </div> -->
             </section>
 
+            <!-- Monthly Trends -->
+            <section class="chart-container trend-section" id="trends">
+                <div class="chart-header">
+                    <h3>Monthly Spend Trends</h3>
+                    <div class="chart-controls">
+                        <button class="active" data-metric="amounts">Volume</button>
+                        <button data-metric="counts">Count</button>
+                        <button data-metric="fees">Fees</button>
+                    </div>
+                </div>
+                <canvas id="trendChart"></canvas>
+            </section>
+
+            <!-- Recent Transactions -->
             <section class="recent-transactions" id="transactions">
                 <div class="section-header">
                     <h3>Recent Transactions</h3>
@@ -80,24 +123,21 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>TransactionID</th>
+                                <th>Transaction ID</th>
                                 <th>Date</th>
-                                <!-- <th>Sender</th>
-                                <th>Recipient</th> -->
-                                <th>Transaction Type</th>
+                                <th>Type</th>
                                 <th>Amount</th>
-                                <th>Fees Charged</th>
+                                <th>Fee</th>
                             </tr>
                         </thead>
                         <tbody id="recent-transactions-body">
-                            <tr>
-                                <td colspan="5" class="loading-cell">Loading transactions...</td>
-                            </tr>
+                            <tr><td colspan="5" class="loading-cell">Loading transactions...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
 
+            <!-- All Transactions -->
             <section class="transaction-display" id="all-transactions">
                 <div class="section-header">
                     <h3>All Transactions</h3>
@@ -106,18 +146,15 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>TransactionID</th>
+                                <th>Transaction ID</th>
                                 <th>Date</th>
-                                <!-- <th>Sender</th>
-                                <th>Recipient</th> -->
-                                <th>Transaction Type</th>
+                                <th>Type</th>
                                 <th>Amount</th>
-                                <th>Fee Charged</th>
-                                
+                                <th>Fee</th>
                             </tr>
                         </thead>
                         <tbody id="transaction-table-body">
-                            <tr><td colspan="6" class="loading-cell">Loading all transactions...</td></tr>
+                            <tr><td colspan="5" class="loading-cell">Loading all transactions...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -126,7 +163,7 @@
     </div>
 
     <footer>
-        <p>&copy; 2025 MoMo Analysis Dashboard</p>
+        <p>&copy; 2024 MoMo Analysis Dashboard &mdash; Built with Flask &amp; Chart.js</p>
     </footer>
 </body>
 </html>

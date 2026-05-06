@@ -1,75 +1,68 @@
-# MTN MoMo SMS Data Processor & Dashboard  
+# MTN MoMo SMS Data Processor & Dashboard
 
-## Overview  
-This project automates the extraction, categorization, and visualization of MTN MoMo transaction messages. It enables users to track financial trends, analyze transactions, and gain valuable insights into their financial activities.  
+A full-stack web application that parses MTN Mobile Money SMS exports, stores them in a relational database, and visualizes spending patterns through an interactive dashboard.
 
-## Key Features  
-- **Automated Data Processing** – Extracts and categorizes SMS-based financial transactions.  
-- **Comprehensive Transaction Tracking** – Includes deposits, withdrawals, payments, bank transfers, and more.  
-- **Interactive Dashboard** – Displays key insights through visual reports, charts, and tables.  
-- **Search and Filter Functionality** – Allows users to explore financial data with advanced filtering options.  
-- **Transaction Analytics** – Provides summaries, trends, and transaction volume analysis.  
+## Features
 
-## Dashboard Features  
-The web-based dashboard provides an interface for visualizing and interacting with transaction data. It includes:  
+- **4 Summary Stat Cards** — total transactions, total volume, fees paid, and top transaction type, all filter-aware
+- **Transaction Type Chart** — switchable bar/pie chart breaking down spending by category
+- **Monthly Spend Trends** — line chart showing volume, count, or fees across months
+- **Filterable Tables** — recent and full transaction tables with date-range and type filters
+- **CSV Export** — one-click download of filtered results
+- **Automated XML Parsing** — reads MTN MoMo SMS backup files and categorizes 10+ transaction types
 
-- **Transaction Types Analysis** – Bar chart displaying the distribution of transaction types.  
-- **Recent Transactions Table** – A searchable and sortable table listing the latest transactions with details.  
-- **Customizable Timeframes** – Users can view analytics for different time periods by filtering.  
+## Tech Stack
 
-## Tech Stack  
-| Component  | Technology Used  |  
-|------------|-----------------|  
-| **Frontend**  | HTML, CSS, JavaScript  |  
-| **Backend**  | Python (Flask)  |  
-| **Database**  | SQLite  |  
-| **Data Source**  | XML File (MTN MoMo SMS Messages)  |  
-| **Charts and Graphs**  | Chart.js (for visualizations)  |  
+| Layer | Technology |
+|---|---|
+| Frontend | HTML, CSS, JavaScript, Chart.js |
+| Backend | Python, Flask |
+| Database | SQLite via Flask-SQLAlchemy |
+| Data Source | MTN MoMo XML SMS export |
 
-## Implementation Details  
+## Getting Started
 
-### 1. Data Extraction and Cleaning  
-- **XML Parsing** – Converts raw SMS messages into structured data.  
-- **Data Categorization** – Classifies transactions into predefined types such as deposits, withdrawals, and payments.  
-- **Error Handling and Logging** – Tracks unprocessed or malformed messages for further review.  
-
-### 2. Backend and Database Engineering  
-- **Flask-powered API** – Facilitates communication between the frontend and database.  
-- **SQLite Relational Database** – Stores structured transaction records efficiently.  
-- **Optimized Query Handling** – Enables fast data retrieval and filtering.  
-
-### 3. Interactive Dashboard Development  
-- **Built with HTML, CSS, and JavaScript** – Provides a responsive user interface.  
-- **Dynamic Charts and Reports** – Visualizes transaction trends and insights.  
-- **Search and Filter Functionalities** – Allows users to navigate and analyze transactions efficiently.  
-
-## Setup and Installation  
-
-### Clone the Repository  
 ```bash
 git clone https://github.com/davidmuo/MOMO_app.git
 cd MOMO_app
-```
-
-### Install Dependencies  
-```bash
 pip install -r requirements.txt
-```
-
-### Run the Backend Server  
-```bash
 python app.py
 ```
 
-### Launch the Frontend  
-Open `index.html` in a web browser or navigate to `http://localhost:5000` after starting the server.
+Then open http://localhost:5000 in your browser. A sample dataset (`data/transactions.xml`) is included so the app runs immediately out of the box.
 
-## Lessons Learned  
-This project involved working with financial data, backend processing, and frontend visualization. The main challenges included:  
+To use your own data, export your MTN MoMo SMS messages as XML using the [SMS Backup & Restore](https://play.google.com/store/apps/details?id=com.riteshsahu.SMSBackupRestore) Android app and replace `data/transactions.xml`.
 
-- Designing a scalable and efficient full-stack architecture.  
-- Implementing data cleaning and categorization techniques.  
-- Optimizing database queries for real-time transaction retrieval.  
+## Running Tests
 
-## Demo Video  
+```bash
+pip install pytest
+pytest test_app.py -v
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `FLASK_DEBUG` | `false` | Set to `true` to enable debug mode |
+
+## Project Structure
+
+```
+MOMO_app/
+├── app.py               # Flask app, DB models, API routes
+├── test_app.py          # Pytest test suite
+├── requirements.txt
+├── data/
+│   └── transactions.xml # SMS transaction data (sample included)
+├── templates/
+│   └── index.html       # Dashboard UI
+└── static/
+    ├── script.js        # Frontend logic, Chart.js rendering
+    ├── styles.css       # Styles
+    └── logo.png
+```
+
+## Demo
+
 Watch the demo: https://drive.google.com/file/d/1nuomSYfo3rf3J7jN3VNN_F4cf7hL8fRo/view?usp=sharing

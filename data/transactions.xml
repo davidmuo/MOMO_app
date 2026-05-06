@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smses count="60">
+  <sms body="You have received 25,000 RWF from Alice M on your Mobile Money account. TxId: 100101. Your balance is 25,000 RWF." readable_date="03 Jan 2024 08:15:22 AM" />
+  <sms body="A deposit of RWF 100,000 has been made to your account from Bank. TxId: 100102. Your balance is 125,000 RWF." readable_date="05 Jan 2024 10:30:00 AM" />
+  <sms body="You have transferred 15,000 RWF to Bob K(250788000001). TxId: 100103. Fee was: 150 RWF. Your new balance is 109,850 RWF." readable_date="07 Jan 2024 02:45:10 PM" />
+  <sms body="You have purchased airtime of 2,000 RWF. TxId: 100104. Your balance is 107,850 RWF." readable_date="08 Jan 2024 09:00:00 AM" />
+  <sms body="Cash power purchase of 10,000 RWF for meter 123456789 was successful. TxId: 100105. Your balance is 97,850 RWF." readable_date="10 Jan 2024 06:30:00 PM" />
+  <sms body="You have withdrawn 20,000 RWF from agent James R. TxId: 100106. Fee was: 200 RWF. Your balance is 77,650 RWF." readable_date="12 Jan 2024 11:20:00 AM" />
+  <sms body="Payment of 5,000 RWF to code 4321 was successful. TxId: 100107. Fee was: 50 RWF. Your balance is 72,600 RWF." readable_date="15 Jan 2024 03:10:00 PM" />
+  <sms body="You have purchased a data bundle of 3,000 RWF. TxId: 100108. Your balance is 69,600 RWF." readable_date="17 Jan 2024 07:45:00 AM" />
+  <sms body="You have received 50,000 RWF from Carol N on your Mobile Money account. TxId: 100109. Your balance is 119,600 RWF." readable_date="20 Jan 2024 12:00:00 PM" />
+  <sms body="You have transferred 30,000 RWF to David U(250788000002). TxId: 100110. Fee was: 300 RWF. Your new balance is 89,300 RWF." readable_date="25 Jan 2024 04:55:00 PM" />
+  <sms body="Payment of 8,000 RWF to code 9876 was successful. TxId: 100111. Fee was: 80 RWF. Your balance is 81,220 RWF." readable_date="28 Jan 2024 10:30:00 AM" />
+  <sms body="A deposit of RWF 75,000 has been made to your account from Bank. TxId: 100201. Your balance is 156,220 RWF." readable_date="01 Feb 2024 09:00:00 AM" />
+  <sms body="You have purchased airtime of 1,000 RWF. TxId: 100202. Your balance is 155,220 RWF." readable_date="03 Feb 2024 08:30:00 AM" />
+  <sms body="You have withdrawn 40,000 RWF from agent Sarah M. TxId: 100203. Fee was: 400 RWF. Your balance is 114,820 RWF." readable_date="05 Feb 2024 02:00:00 PM" />
+  <sms body="You have received 12,000 RWF from Eve P on your Mobile Money account. TxId: 100204. Your balance is 126,820 RWF." readable_date="08 Feb 2024 05:15:00 PM" />
+  <sms body="Cash power purchase of 15,000 RWF for meter 123456789 was successful. TxId: 100205. Your balance is 111,820 RWF." readable_date="10 Feb 2024 07:00:00 PM" />
+  <sms body="You have transferred 20,000 RWF to Frank O(250788000003). TxId: 100206. Fee was: 200 RWF. Your new balance is 91,620 RWF." readable_date="14 Feb 2024 11:45:00 AM" />
+  <sms body="You have purchased a data bundle of 5,000 RWF. TxId: 100207. Your balance is 86,620 RWF." readable_date="18 Feb 2024 06:00:00 AM" />
+  <sms body="Payment of 3,500 RWF to code 1122 was successful. TxId: 100208. Fee was: 35 RWF. Your balance is 83,085 RWF." readable_date="22 Feb 2024 03:30:00 PM" />
+  <sms body="You have withdrawn 25,000 RWF from agent James R. TxId: 100209. Fee was: 250 RWF. Your balance is 57,835 RWF." readable_date="26 Feb 2024 01:00:00 PM" />
+  <sms body="A deposit of RWF 150,000 has been made to your account from Bank. TxId: 100301. Your balance is 207,835 RWF." readable_date="01 Mar 2024 09:30:00 AM" />
+  <sms body="You have received 8,000 RWF from Grace K on your Mobile Money account. TxId: 100302. Your balance is 215,835 RWF." readable_date="04 Mar 2024 10:00:00 AM" />
+  <sms body="You have transferred 45,000 RWF to Henry B(250788000004). TxId: 100303. Fee was: 450 RWF. Your new balance is 170,385 RWF." readable_date="07 Mar 2024 02:30:00 PM" />
+  <sms body="You have purchased airtime of 3,000 RWF. TxId: 100304. Your balance is 167,385 RWF." readable_date="10 Mar 2024 08:00:00 AM" />
+  <sms body="Payment of 12,000 RWF to code 5544 was successful. TxId: 100305. Fee was: 120 RWF. Your balance is 155,265 RWF." readable_date="13 Mar 2024 11:00:00 AM" />
+  <sms body="Cash power purchase of 20,000 RWF for meter 123456789 was successful. TxId: 100306. Your balance is 135,265 RWF." readable_date="15 Mar 2024 06:30:00 PM" />
+  <sms body="You have purchased a data bundle of 2,500 RWF. TxId: 100307. Your balance is 132,765 RWF." readable_date="18 Mar 2024 07:15:00 AM" />
+  <sms body="You have withdrawn 30,000 RWF from agent Sarah M. TxId: 100308. Fee was: 300 RWF. Your balance is 102,465 RWF." readable_date="21 Mar 2024 12:45:00 PM" />
+  <sms body="You have received 35,000 RWF from Ivan L on your Mobile Money account. TxId: 100309. Your balance is 137,465 RWF." readable_date="25 Mar 2024 04:00:00 PM" />
+  <sms body="You have transferred 10,000 RWF to Judy W(250788000005). TxId: 100310. Fee was: 100 RWF. Your new balance is 127,365 RWF." readable_date="28 Mar 2024 09:30:00 AM" />
+  <sms body="A deposit of RWF 200,000 has been made to your account from Bank. TxId: 100401. Your balance is 327,365 RWF." readable_date="02 Apr 2024 10:00:00 AM" />
+  <sms body="You have withdrawn 50,000 RWF from agent James R. TxId: 100402. Fee was: 500 RWF. Your balance is 276,865 RWF." readable_date="05 Apr 2024 11:30:00 AM" />
+  <sms body="You have received 20,000 RWF from Kevin A on your Mobile Money account. TxId: 100403. Your balance is 296,865 RWF." readable_date="08 Apr 2024 02:00:00 PM" />
+  <sms body="Payment of 6,000 RWF to code 7788 was successful. TxId: 100404. Fee was: 60 RWF. Your balance is 290,805 RWF." readable_date="10 Apr 2024 03:45:00 PM" />
+  <sms body="Cash power purchase of 25,000 RWF for meter 123456789 was successful. TxId: 100405. Your balance is 265,805 RWF." readable_date="12 Apr 2024 07:00:00 PM" />
+  <sms body="You have purchased a data bundle of 4,000 RWF. TxId: 100406. Your balance is 261,805 RWF." readable_date="15 Apr 2024 06:30:00 AM" />
+  <sms body="You have transferred 60,000 RWF to Linda C(250788000006). TxId: 100407. Fee was: 600 RWF. Your new balance is 201,205 RWF." readable_date="18 Apr 2024 01:15:00 PM" />
+  <sms body="You have purchased airtime of 2,000 RWF. TxId: 100408. Your balance is 199,205 RWF." readable_date="22 Apr 2024 09:00:00 AM" />
+  <sms body="You have received 15,000 RWF from Mary T on your Mobile Money account. TxId: 100409. Your balance is 214,205 RWF." readable_date="26 Apr 2024 05:30:00 PM" />
+  <sms body="Payment of 9,500 RWF to code 3344 was successful. TxId: 100410. Fee was: 95 RWF. Your balance is 204,610 RWF." readable_date="29 Apr 2024 10:00:00 AM" />
+  <sms body="A deposit of RWF 120,000 has been made to your account from Bank. TxId: 100501. Your balance is 324,610 RWF." readable_date="03 May 2024 09:00:00 AM" />
+  <sms body="You have transferred 25,000 RWF to Nick S(250788000007). TxId: 100502. Fee was: 250 RWF. Your new balance is 299,360 RWF." readable_date="06 May 2024 11:00:00 AM" />
+  <sms body="You have withdrawn 35,000 RWF from agent Sarah M. TxId: 100503. Fee was: 350 RWF. Your balance is 264,010 RWF." readable_date="09 May 2024 02:30:00 PM" />
+  <sms body="You have received 40,000 RWF from Olivia F on your Mobile Money account. TxId: 100504. Your balance is 304,010 RWF." readable_date="12 May 2024 04:00:00 PM" />
+  <sms body="Cash power purchase of 18,000 RWF for meter 123456789 was successful. TxId: 100505. Your balance is 286,010 RWF." readable_date="15 May 2024 07:30:00 PM" />
+  <sms body="You have purchased a data bundle of 3,500 RWF. TxId: 100506. Your balance is 282,510 RWF." readable_date="18 May 2024 07:00:00 AM" />
+  <sms body="Payment of 7,000 RWF to code 6655 was successful. TxId: 100507. Fee was: 70 RWF. Your balance is 275,440 RWF." readable_date="21 May 2024 12:00:00 PM" />
+  <sms body="You have purchased airtime of 1,500 RWF. TxId: 100508. Your balance is 273,940 RWF." readable_date="25 May 2024 08:30:00 AM" />
+  <sms body="You have transferred 15,000 RWF to Paul D(250788000008). TxId: 100509. Fee was: 150 RWF. Your new balance is 258,790 RWF." readable_date="28 May 2024 03:15:00 PM" />
+  <sms body="A deposit of RWF 180,000 has been made to your account from Bank. TxId: 100601. Your balance is 438,790 RWF." readable_date="01 Jun 2024 10:00:00 AM" />
+  <sms body="You have received 30,000 RWF from Quinn B on your Mobile Money account. TxId: 100602. Your balance is 468,790 RWF." readable_date="04 Jun 2024 01:00:00 PM" />
+  <sms body="You have withdrawn 60,000 RWF from agent James R. TxId: 100603. Fee was: 600 RWF. Your balance is 408,190 RWF." readable_date="07 Jun 2024 11:30:00 AM" />
+  <sms body="Cash power purchase of 22,000 RWF for meter 123456789 was successful. TxId: 100604. Your balance is 386,190 RWF." readable_date="10 Jun 2024 06:00:00 PM" />
+  <sms body="You have transferred 80,000 RWF to Rachel E(250788000009). TxId: 100605. Fee was: 800 RWF. Your new balance is 305,390 RWF." readable_date="13 Jun 2024 02:00:00 PM" />
+  <sms body="You have purchased a data bundle of 5,000 RWF. TxId: 100606. Your balance is 300,390 RWF." readable_date="16 Jun 2024 07:00:00 AM" />
+  <sms body="Payment of 11,000 RWF to code 2233 was successful. TxId: 100607. Fee was: 110 RWF. Your balance is 289,280 RWF." readable_date="19 Jun 2024 10:30:00 AM" />
+  <sms body="You have purchased airtime of 2,500 RWF. TxId: 100608. Your balance is 286,780 RWF." readable_date="22 Jun 2024 09:15:00 AM" />
+  <sms body="You have received 18,000 RWF from Steve H on your Mobile Money account. TxId: 100609. Your balance is 304,780 RWF." readable_date="25 Jun 2024 03:45:00 PM" />
+  <sms body="You have transferred 20,000 RWF to Tina J(250788000010). TxId: 100610. Fee was: 200 RWF. Your new balance is 284,580 RWF." readable_date="28 Jun 2024 11:00:00 AM" />
+</smses>
