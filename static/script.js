@@ -1,116 +1,144 @@
 /* ─────────────────────────────────────────────
-   MoMo Dashboard — script.js
+   MoMo Dashboard
 ───────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ── refs ── */
-  const fromDateEl   = document.getElementById("from-date");
-  const toDateEl     = document.getElementById("to-date");
-  const typeEl       = document.getElementById("transaction-type");
-  const applyBtn     = document.getElementById("apply-filters");
-  const clearBtn     = document.getElementById("clear-filters");
-  const exportBtn    = document.getElementById("export-csv");
-  const searchEl     = document.getElementById("global-search");
-  const tooltip      = document.getElementById("heatmap-tooltip");
+  /* ── DOM refs ── */
+  const fromDateEl = document.getElementById("from-date");
+  const toDateEl   = document.getElementById("to-date");
+  const typeEl     = document.getElementById("transaction-type");
+  const applyBtn   = document.getElementById("apply-filters");
+  const clearBtn   = document.getElementById("clear-filters");
+  const exportBtn  = document.getElementById("export-csv");
+  const searchEl   = document.getElementById("global-search");
+  const tooltip    = document.getElementById("heatmap-tooltip");
 
   /* ── state ── */
-  let trendChart    = null;
-  let typeChart     = null;
-  let activeTrend   = "amounts";
-  let activeType    = "doughnut";
-  let allTxData     = [];
+  let trendChart   = null;
+  let typeChart    = null;
+  let activeTrend  = "amounts";
+  let activeType   = "doughnut";
+  let allTxData    = [];
+  let cachedDist   = {};
+  let cachedTrends = {};
 
-  const CHART_COLORS = [
+  const COLORS = [
     "#F9CA24","#F0932B","#6AB04C","#686DE0",
-    "#E056FD","#7ED6DF","#EB4D4B","#22A6B3",
-    "#30336B","#130F40"
+    "#E056FD","#22A6B3","#EB4D4B","#7ED6DF",
+    "#30336B","#16A34A"
   ];
 
-  /* ── helpers ── */
+  /* ─────────────────────────────────────────
+     THEME
+  ───────────────────────────────────────── */
+  function isDark() {
+    return document.body.getAttribute("data-theme") === "dark";
+  }
+
+  function chartColors() {
+    return isDark()
+      ? { text: "#8A90AA", grid: "#252A40", tooltip: "#1C2035" }
+      : { text: "#9DA3BC", grid: "#F0F3FB", tooltip: "#1A1D2E" };
+  }
+
+  function applyTheme(dark) {
+    if (dark) {
+      document.body.setAttribute("data-theme", "dark");
+    } else {
+      document.body.removeAttribute("data-theme");
+    }
+    localStorage.setItem("momo-theme", dark ? "dark" : "light");
+
+    document.getElementById("dark-mode-btn").classList.toggle("active", dark);
+    document.getElementById("light-mode-btn").classList.toggle("active", !dark);
+
+    /* re-render charts with new palette */
+    if (Object.keys(cachedDist).length)   renderTypeChart(cachedDist);
+    if (Object.keys(cachedTrends).length) renderTrendChart(cachedTrends);
+  }
+
+  /* restore saved theme */
+  applyTheme(localStorage.getItem("momo-theme") === "dark");
+
+  /* ─────────────────────────────────────────
+     HELPERS
+  ───────────────────────────────────────── */
   function fmt(n) {
     return new Intl.NumberFormat("rw-RW", {
       style: "currency", currency: "RWF", maximumFractionDigits: 0
     }).format(n);
   }
 
-  function params() {
+  function buildParams() {
     const p = new URLSearchParams();
     if (fromDateEl.value) p.set("from_date", fromDateEl.value);
     if (toDateEl.value)   p.set("to_date",   toDateEl.value);
-    if (typeEl.value && typeEl.value !== "All") p.set("transaction_type", typeEl.value);
+    const t = typeEl.value;
+    if (t && t !== "All") p.set("transaction_type", t);
     return p.toString();
   }
 
-  /* ── count-up animation ── */
-  function countUp(el, target, formatter) {
+  /* count-up animation */
+  function countUp(el, target, toStr) {
     const dur = 900;
     const t0  = performance.now();
     (function tick(now) {
-      const p = Math.min((now - t0) / dur, 1);
+      const p     = Math.min((now - t0) / dur, 1);
       const eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = formatter(Math.round(target * eased));
+      el.textContent = toStr(Math.round(target * eased));
       if (p < 1) requestAnimationFrame(tick);
     })(t0);
   }
 
-  /* ── trend pill ── */
+  /* trend badge */
   function renderTrend(el, value, label) {
-    if (value === null || value === undefined) { el.textContent = ""; return; }
+    if (value === null || value === undefined) { el.textContent = ""; el.className = "stat-trend"; return; }
     const up = value >= 0;
     el.className = "stat-trend " + (up ? "trend-up" : "trend-down");
-    el.innerHTML = `<i class="fas fa-arrow-${up ? "up" : "down"}"></i> ${Math.abs(value)}% ${label}`;
+    el.innerHTML = `<i class="fas fa-arrow-${up ? "trending-up" : "trending-down"}"></i>
+      ${up ? "+" : ""}${value}% ${label}`;
   }
 
-  /* ── gradient helper for line chart ── */
+  /* gradient fill for line chart */
   function makeGradient(ctx, h) {
     const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0,   "rgba(249,202,36,.35)");
-    g.addColorStop(1,   "rgba(249,202,36,.0)");
+    g.addColorStop(0,   isDark() ? "rgba(249,202,36,.25)" : "rgba(249,202,36,.30)");
+    g.addColorStop(.7,  isDark() ? "rgba(249,202,36,.05)" : "rgba(249,202,36,.08)");
+    g.addColorStop(1,   "rgba(249,202,36,0)");
     return g;
   }
 
-  /* ───────────────────────────────────────────
-     DASHBOARD DATA  (stats + recent table)
-  ─────────────────────────────────────────── */
+  /* ─────────────────────────────────────────
+     DASHBOARD DATA
+  ───────────────────────────────────────── */
   async function loadDashboard() {
     try {
-      const res  = await fetch(`/api/dashboard-data?${params()}`);
+      const res  = await fetch(`/api/dashboard-data?${buildParams()}`);
       const data = await res.json();
 
-      /* stat cards */
-      const elTx  = document.getElementById("stat-total-tx");
-      const elAmt = document.getElementById("stat-total-amount");
-      const elFee = document.getElementById("stat-total-fees");
-
-      countUp(elTx,  data.totalTransactions, n => n.toLocaleString());
-      countUp(elAmt, data.totalAmount,        n => fmt(n));
-      countUp(elFee, data.totalFees,          n => fmt(n));
+      countUp(document.getElementById("stat-total-tx"),     data.totalTransactions, n => n.toLocaleString());
+      countUp(document.getElementById("stat-total-amount"), data.totalAmount,        n => fmt(n));
+      countUp(document.getElementById("stat-total-fees"),   data.totalFees,          n => fmt(n));
       document.getElementById("stat-top-type").textContent = data.topType || "—";
 
       renderTrend(document.getElementById("trend-tx"),     data.trends?.transactions, "vs last month");
       renderTrend(document.getElementById("trend-amount"), data.trends?.amount,       "vs last month");
       renderTrend(document.getElementById("trend-fees"),   data.trends?.fees,         "vs last month");
 
-      /* type chart */
+      cachedDist = data.typeDistribution;
       renderTypeChart(data.typeDistribution);
-
-      /* recent table */
-      renderTable(
-        document.getElementById("recent-transactions-body"),
-        data.recentTransactions,
-        5
-      );
-
+      renderRecentTable(data.recentTransactions);
     } catch (e) { console.error("dashboard:", e); }
   }
 
-  /* ───────────────────────────────────────────
-     MONTHLY TRENDS  (line chart)
-  ─────────────────────────────────────────── */
+  /* ─────────────────────────────────────────
+     MONTHLY TRENDS
+  ───────────────────────────────────────── */
   async function loadTrends() {
     try {
-      const res  = await fetch(`/api/monthly-trends?${params()}`);
+      const res  = await fetch(`/api/monthly-trends?${buildParams()}`);
       const data = await res.json();
+      cachedTrends = data;
       renderTrendChart(data);
     } catch (e) { console.error("trends:", e); }
   }
@@ -120,27 +148,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const canvas = document.getElementById("trendChart");
     const ctx    = canvas.getContext("2d");
-
-    const metricMap = { amounts: "Volume (RWF)", counts: "Transactions", fees: "Fees (RWF)" };
-    const values    = data[activeTrend] || [];
+    const c      = chartColors();
+    const labels = { amounts: "Volume (RWF)", counts: "Transactions", fees: "Fees (RWF)" };
 
     trendChart = new Chart(ctx, {
       type: "line",
       data: {
         labels: data.months,
         datasets: [{
-          label: metricMap[activeTrend],
-          data: values,
-          borderColor: "#F9CA24",
-          borderWidth: 2.5,
+          label: labels[activeTrend],
+          data:  data[activeTrend] || [],
+          borderColor:     "#F9CA24",
+          borderWidth:     2.5,
           backgroundColor: makeGradient(ctx, 260),
           pointBackgroundColor: "#F9CA24",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-          pointRadius: 5,
+          pointBorderColor:     isDark() ? "#151929" : "#fff",
+          pointBorderWidth: 2.5,
+          pointRadius:      5,
           pointHoverRadius: 7,
-          fill: true,
-          tension: 0.4,
+          fill:    true,
+          tension: 0.42,
         }],
       },
       options: {
@@ -151,36 +178,35 @@ document.addEventListener("DOMContentLoaded", () => {
           legend: { display: false },
           datalabels: { display: false },
           tooltip: {
-            backgroundColor: "#1A1D2E",
-            titleColor: "#9DA3BC",
-            bodyColor: "#fff",
-            padding: 10,
-            cornerRadius: 8,
+            backgroundColor: c.tooltip,
+            titleColor: c.text,
+            bodyColor: isDark() ? "#EEF0F8" : "#fff",
+            padding: 12,
+            cornerRadius: 10,
+            borderColor: isDark() ? "#252A40" : "transparent",
+            borderWidth: 1,
             callbacks: {
-              label: ctx => {
-                const v = ctx.raw;
-                return activeTrend === "counts"
-                  ? ` ${v} transactions`
-                  : ` ${fmt(v)}`;
-              }
+              label: ctx => activeTrend === "counts"
+                ? `  ${ctx.raw} transactions`
+                : `  ${fmt(ctx.raw)}`
             }
           }
         },
         scales: {
           x: {
-            grid: { display: false },
-            ticks: { color: "#9DA3BC", font: { size: 12 } },
+            grid:   { display: false },
             border: { display: false },
+            ticks:  { color: c.text, font: { size: 12, weight: "500" } },
           },
           y: {
-            grid: { color: "#F0F3FB", drawBorder: false },
-            ticks: {
-              color: "#9DA3BC",
-              font: { size: 11 },
-              callback: v => activeTrend === "counts" ? v : fmt(v),
-              maxTicksLimit: 5,
-            },
+            grid:   { color: c.grid },
             border: { display: false },
+            ticks:  {
+              color: c.text,
+              font:  { size: 11 },
+              maxTicksLimit: 5,
+              callback: v => activeTrend === "counts" ? v : fmt(v),
+            }
           }
         }
       },
@@ -188,18 +214,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ───────────────────────────────────────────
+  /* ─────────────────────────────────────────
      TYPE CHART  (doughnut / bar)
-  ─────────────────────────────────────────── */
+  ───────────────────────────────────────── */
   function renderTypeChart(dist) {
     if (typeChart) typeChart.destroy();
 
     const labels = Object.keys(dist);
     const values = Object.values(dist);
     const total  = values.reduce((a, b) => a + b, 0);
-
-    const canvas  = document.getElementById("typeChart");
-    const ctx     = canvas.getContext("2d");
+    const canvas = document.getElementById("typeChart");
+    const ctx    = canvas.getContext("2d");
+    const c      = chartColors();
     const isDough = activeType === "doughnut";
 
     typeChart = new Chart(ctx, {
@@ -208,76 +234,85 @@ document.addEventListener("DOMContentLoaded", () => {
         labels,
         datasets: [{
           data: values,
-          backgroundColor: CHART_COLORS,
-          borderWidth: isDough ? 2 : 1,
-          borderColor: isDough ? "#fff" : CHART_COLORS,
-          borderRadius: isDough ? 0 : 4,
-          hoverOffset: isDough ? 6 : 0,
+          backgroundColor: COLORS,
+          borderColor:     isDough ? (isDark() ? "#151929" : "#fff") : COLORS,
+          borderWidth:     isDough ? 2 : 0,
+          borderRadius:    isDough ? 0 : 5,
+          hoverOffset:     isDough ? 8 : 0,
         }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: isDough ? "68%" : 0,
+        cutout: isDough ? "70%" : 0,
         plugins: {
           legend: {
-            position: isDough ? "bottom" : "top",
+            position: "bottom",
             labels: {
-              font: { size: 11 },
-              color: "#5A607A",
-              padding: 12,
-              boxWidth: 10,
+              font:      { size: 11, weight: "500" },
+              color:     c.text,
+              padding:   14,
+              boxWidth:  10,
               boxHeight: 10,
+              usePointStyle: true,
+              pointStyle: "circle",
             }
           },
-          datalabels: isDough
-            ? {
-                display: true,
-                color: "#fff",
-                font: { weight: "bold", size: 11 },
-                formatter: (v) => v > 0 ? `${Math.round(v / total * 100)}%` : "",
-              }
-            : {
-                display: true,
-                anchor: "end",
-                align: "end",
-                color: "#5A607A",
-                font: { weight: "600", size: 11 },
-                offset: 2,
-                formatter: v => v,
-              },
+          datalabels: {
+            display: ctx => (ctx.dataset.data[ctx.dataIndex] / total) > 0.06,
+            color:   isDough ? "#fff" : "#fff",
+            font:    { weight: "700", size: 11 },
+            anchor:  isDough ? "center" : "end",
+            align:   isDough ? "center" : "end",
+            offset:  isDough ? 0 : 4,
+            formatter: v => `${Math.round(v / total * 100)}%`,
+          },
           tooltip: {
-            backgroundColor: "#1A1D2E",
-            titleColor: "#9DA3BC",
-            bodyColor: "#fff",
-            padding: 10,
-            cornerRadius: 8,
+            backgroundColor: c.tooltip,
+            titleColor:      c.text,
+            bodyColor:       isDark() ? "#EEF0F8" : "#fff",
+            padding:         12,
+            cornerRadius:    10,
             callbacks: {
-              label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw / total * 100)}%)`
+              label: ctx =>
+                `  ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw / total * 100)}%)`
             }
           }
         },
         ...(isDough ? {} : {
           scales: {
-            x: { grid: { display: false }, ticks: { color: "#9DA3BC", font: { size: 10 } }, border: { display: false } },
-            y: { grid: { color: "#F0F3FB" }, ticks: { color: "#9DA3BC", font: { size: 11 }, maxTicksLimit: 5 }, border: { display: false } }
+            x: {
+              grid:   { display: false },
+              border: { display: false },
+              ticks:  { color: c.text, font: { size: 10 }, maxRotation: 40 }
+            },
+            y: {
+              grid:   { color: c.grid },
+              border: { display: false },
+              ticks:  { color: c.text, font: { size: 11 }, maxTicksLimit: 5 }
+            }
           }
         })
       },
+      /* center-text plugin for doughnut */
       plugins: [ChartDataLabels,
         ...(isDough ? [{
           id: "centerText",
           afterDraw(chart) {
             const { width, height, ctx } = chart;
             ctx.save();
-            ctx.font = `700 22px Inter, sans-serif`;
-            ctx.fillStyle = "#1A1D2E";
+            const cx = width / 2;
+            const cy = height / 2 - (chart.legend.height / 2);
+
+            ctx.font = `800 26px Inter, sans-serif`;
+            ctx.fillStyle = isDark() ? "#EEF0F8" : "#1A1D2E";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(total, width / 2, height / 2 - 8);
-            ctx.font = `500 11px Inter, sans-serif`;
-            ctx.fillStyle = "#9DA3BC";
-            ctx.fillText("transactions", width / 2, height / 2 + 14);
+            ctx.fillText(total, cx, cy - 10);
+
+            ctx.font = `500 12px Inter, sans-serif`;
+            ctx.fillStyle = isDark() ? "#8A90AA" : "#9DA3BC";
+            ctx.fillText("transactions", cx, cy + 14);
             ctx.restore();
           }
         }] : [])
@@ -285,9 +320,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ───────────────────────────────────────────
+  /* ─────────────────────────────────────────
      ACTIVITY HEATMAP
-  ─────────────────────────────────────────── */
+  ───────────────────────────────────────── */
   async function loadHeatmap() {
     try {
       const res  = await fetch("/api/activity-heatmap");
@@ -296,231 +331,199 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) { console.error("heatmap:", e); }
   }
 
+  function heatColor(count) {
+    if (!count)    return isDark() ? "#252A40" : "#EAECF2";
+    if (count < 2) return isDark() ? "#4A3800" : "#FFF0A0";
+    if (count < 3) return "#F9CA24";
+    if (count < 5) return "#E1A800";
+    return "#B8860B";
+  }
+
   function renderHeatmap(data) {
     const grid   = document.getElementById("heatmap-grid");
     const months = document.getElementById("heatmap-months");
     grid.innerHTML   = "";
     months.innerHTML = "";
 
-    if (!Object.keys(data).length) return;
-
-    /* date range from data */
     const dates = Object.keys(data).sort();
+    if (!dates.length) return;
+
     const start = new Date(dates[0]);
     const end   = new Date(dates[dates.length - 1]);
 
     /* rewind to Monday */
     const first = new Date(start);
-    const dow   = first.getDay();           // 0=Sun
-    first.setDate(first.getDate() - ((dow + 6) % 7));  // go back to Mon
+    first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
 
-    function cellColor(count) {
-      if (!count)   return "#EAECF2";
-      if (count < 2) return "#FFF0A0";
-      if (count < 3) return "#F9CA24";
-      if (count < 5) return "#E1A800";
-      return "#B8860B";
-    }
-
-    let cur       = new Date(first);
-    let weekCols  = 0;
-    const monthPositions = {};
+    let cur = new Date(first);
+    let col = 0;
+    const monthPos = {};
 
     while (cur <= end) {
-      const col = document.createElement("div");
-      col.className = "heatmap-col";
+      const colEl = document.createElement("div");
+      colEl.className = "heatmap-col";
 
       for (let d = 0; d < 7; d++) {
-        const cell     = document.createElement("div");
+        const cell    = document.createElement("div");
         cell.className = "heatmap-cell";
-        const key      = cur.toISOString().split("T")[0];
-        const inRange  = cur >= start && cur <= end;
-        const count    = data[key] || 0;
+        const key     = cur.toISOString().split("T")[0];
+        const inRange = cur >= start && cur <= end;
+        const count   = data[key] || 0;
 
-        cell.style.background = inRange ? cellColor(count) : "transparent";
+        cell.style.background = inRange ? heatColor(count) : "transparent";
 
         if (inRange) {
-          cell.addEventListener("mouseenter", e => {
-            const label = count === 1 ? "1 transaction" : `${count} transactions`;
-            tooltip.textContent = `${key}  —  ${label}`;
+          const dateLabel = cur.toLocaleDateString("en", { weekday:"short", year:"numeric", month:"short", day:"numeric" });
+          const countLabel = count === 1 ? "1 transaction" : `${count} transactions`;
+
+          cell.addEventListener("mouseenter", () => {
+            tooltip.textContent = `${dateLabel} — ${countLabel}`;
             tooltip.classList.add("visible");
           });
           cell.addEventListener("mousemove", e => {
-            tooltip.style.left = (e.clientX + 12) + "px";
-            tooltip.style.top  = (e.clientY - 28) + "px";
+            tooltip.style.left = (e.clientX + 14) + "px";
+            tooltip.style.top  = (e.clientY - 36) + "px";
           });
           cell.addEventListener("mouseleave", () => tooltip.classList.remove("visible"));
-        }
 
-        /* track month label position */
-        if (d === 0 && inRange) {
-          const mn = cur.toLocaleDateString("en", { month: "short" });
-          if (cur.getDate() <= 7 && !monthPositions[mn]) {
-            monthPositions[mn] = weekCols;
+          /* track first occurrence of each month */
+          if (d === 0) {
+            const mn = cur.toLocaleDateString("en", { month: "short" });
+            if (cur.getDate() <= 7 && !monthPos[mn]) monthPos[mn] = col;
           }
         }
 
-        col.appendChild(cell);
+        colEl.appendChild(cell);
         cur.setDate(cur.getDate() + 1);
       }
 
-      grid.appendChild(col);
-      weekCols++;
+      grid.appendChild(colEl);
+      col++;
     }
 
-    /* render month labels */
-    const cellW = 15; // 12px + 3px gap
-    Object.entries(monthPositions).forEach(([name, col]) => {
+    /* month labels */
+    const cellW = 15;
+    let lastCol = -4;
+    Object.entries(monthPos).forEach(([name, c]) => {
+      if (c - lastCol < 3) return; // skip crowded labels
+      lastCol = c;
       const lbl = document.createElement("div");
-      lbl.className = "heatmap-month-label";
-      lbl.style.width       = "0";
-      lbl.style.marginLeft  = (col * cellW) + "px";
-      lbl.style.paddingLeft = "0";
-      lbl.textContent = name;
+      lbl.className    = "heatmap-month-label";
+      lbl.textContent  = name;
+      lbl.style.width  = (cellW * 4) + "px";
+      lbl.style.marginLeft = (c === 0 ? 0 : (c * cellW)) + "px";
       months.appendChild(lbl);
     });
   }
 
-  /* ───────────────────────────────────────────
-     ALL TRANSACTIONS  (with client search)
-  ─────────────────────────────────────────── */
+  /* ─────────────────────────────────────────
+     ALL TRANSACTIONS
+  ───────────────────────────────────────── */
   async function loadAllTransactions() {
     try {
-      const res  = await fetch("/transactions");
-      allTxData  = await res.json();
+      const res = await fetch("/transactions");
+      allTxData = await res.json();
       renderAllTable(allTxData);
     } catch (e) { console.error("all tx:", e); }
+  }
+
+  function rowHTML(tx) {
+    return `<tr>
+      <td class="tx-id">${tx.transaction_id}</td>
+      <td>${tx.date}</td>
+      <td><span class="type-badge">${tx.type}</span></td>
+      <td class="amount">${fmt(tx.amount)}</td>
+      <td class="fee">${fmt(tx.fee)}</td>
+    </tr>`;
   }
 
   function renderAllTable(rows) {
     const tbody = document.getElementById("transaction-table-body");
     const count = document.getElementById("record-count");
     count.textContent = `${rows.length} records`;
-
-    if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">No transactions found</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = rows.map(tx => `
-      <tr>
-        <td class="tx-id">${tx.transaction_id}</td>
-        <td>${tx.date}</td>
-        <td><span class="type-badge">${tx.type}</span></td>
-        <td class="amount">${fmt(tx.amount)}</td>
-        <td class="fee">${fmt(tx.fee)}</td>
-      </tr>
-    `).join("");
+    tbody.innerHTML = rows.length
+      ? rows.map(rowHTML).join("")
+      : `<tr><td colspan="5" class="empty-cell">No transactions found</td></tr>`;
   }
 
-  /* ── shared recent table renderer ── */
-  function renderTable(tbody, rows, limit) {
-    if (!rows || !rows.length) {
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">No transactions found</td></tr>`;
-      return;
-    }
-    const slice = limit ? rows.slice(0, limit) : rows;
-    tbody.innerHTML = slice.map(tx => `
-      <tr>
-        <td class="tx-id">${tx.transaction_id}</td>
-        <td>${tx.date}</td>
-        <td><span class="type-badge">${tx.type}</span></td>
-        <td class="amount">${fmt(tx.amount)}</td>
-        <td class="fee">${fmt(tx.fee)}</td>
-      </tr>
-    `).join("");
+  function renderRecentTable(rows) {
+    const tbody = document.getElementById("recent-transactions-body");
+    tbody.innerHTML = rows?.length
+      ? rows.slice(0, 10).map(rowHTML).join("")
+      : `<tr><td colspan="5" class="empty-cell">No transactions found</td></tr>`;
   }
 
-  /* ───────────────────────────────────────────
-     SIDEBAR  active-on-scroll
-  ─────────────────────────────────────────── */
+  /* ─────────────────────────────────────────
+     SCROLL SPY
+  ───────────────────────────────────────── */
   function initScrollSpy() {
-    const sections = ["overview","analytics","trends","activity","transactions","all-transactions"]
-      .map(id => document.getElementById(id))
-      .filter(Boolean);
-
-    const links = document.querySelectorAll(".nav-link");
-
+    const ids = ["overview","analytics","trends","activity","transactions","all-transactions"];
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => {
         if (e.isIntersecting) {
-          links.forEach(l => l.classList.remove("active"));
-          const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
-          if (active) active.classList.add("active");
+          document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+          document.querySelector(`.nav-link[href="#${e.target.id}"]`)?.classList.add("active");
         }
       });
-    }, { rootMargin: "-30% 0px -60% 0px" });
+    }, { rootMargin: "-25% 0px -65% 0px" });
 
-    sections.forEach(s => obs.observe(s));
+    ids.map(id => document.getElementById(id)).filter(Boolean).forEach(el => obs.observe(el));
   }
 
-  /* ───────────────────────────────────────────
+  /* ─────────────────────────────────────────
      EVENTS
-  ─────────────────────────────────────────── */
+  ───────────────────────────────────────── */
 
-  /* trend metric tabs */
-  document.querySelectorAll("#trend-tabs .pill").forEach(btn => {
+  document.getElementById("light-mode-btn").addEventListener("click", () => applyTheme(false));
+  document.getElementById("dark-mode-btn").addEventListener("click",  () => applyTheme(true));
+
+  document.querySelectorAll("#trend-tabs .pill").forEach(btn =>
     btn.addEventListener("click", () => {
       document.querySelectorAll("#trend-tabs .pill").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       activeTrend = btn.dataset.metric;
       loadTrends();
-    });
-  });
+    })
+  );
 
-  /* type chart tabs */
-  document.querySelectorAll("#type-tabs .pill").forEach(btn => {
+  document.querySelectorAll("#type-tabs .pill").forEach(btn =>
     btn.addEventListener("click", () => {
       document.querySelectorAll("#type-tabs .pill").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       activeType = btn.dataset.type;
-      loadDashboard();
-    });
-  });
+      if (Object.keys(cachedDist).length) renderTypeChart(cachedDist);
+    })
+  );
 
   applyBtn.addEventListener("click", () => { loadDashboard(); loadTrends(); });
 
   clearBtn.addEventListener("click", () => {
-    fromDateEl.value = "";
-    toDateEl.value   = "";
-    typeEl.value     = "All";
+    fromDateEl.value = toDateEl.value = "";
+    typeEl.value = "All";
     loadDashboard();
     loadTrends();
   });
 
   exportBtn.addEventListener("click", () => {
-    window.location.href = `/api/export-csv?${params()}`;
+    window.location.href = `/api/export-csv?${buildParams()}`;
   });
 
-  /* global search → filters all-transactions table */
   searchEl.addEventListener("input", () => {
     const q = searchEl.value.toLowerCase().trim();
-    if (!q) { renderAllTable(allTxData); return; }
-    const filtered = allTxData.filter(tx =>
-      tx.transaction_id.toLowerCase().includes(q) ||
-      tx.type.toLowerCase().includes(q) ||
-      tx.date.includes(q)
-    );
+    const filtered = q
+      ? allTxData.filter(tx =>
+          tx.transaction_id.toLowerCase().includes(q) ||
+          tx.type.toLowerCase().includes(q) ||
+          tx.date.includes(q))
+      : allTxData;
     renderAllTable(filtered);
-
-    /* scroll to all-transactions */
-    if (q.length > 1) {
+    if (q.length > 1)
       document.getElementById("all-transactions")?.scrollIntoView({ behavior: "smooth" });
-    }
   });
 
-  /* appearance toggle (just UI — no actual dark mode) */
-  document.getElementById("light-mode-btn")?.addEventListener("click", function() {
-    this.classList.add("active");
-    document.getElementById("dark-mode-btn")?.classList.remove("active");
-  });
-  document.getElementById("dark-mode-btn")?.addEventListener("click", function() {
-    this.classList.add("active");
-    document.getElementById("light-mode-btn")?.classList.remove("active");
-  });
-
-  /* ───────────────────────────────────────────
+  /* ─────────────────────────────────────────
      INIT
-  ─────────────────────────────────────────── */
+  ───────────────────────────────────────── */
   loadDashboard();
   loadTrends();
   loadHeatmap();
