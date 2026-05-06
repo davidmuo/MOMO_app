@@ -112,6 +112,31 @@ def _apply_filters(query):
     return query
 
 
+def _month_over_month():
+    latest = db.session.query(db.func.max(Transaction.date)).scalar()
+    if not latest:
+        return {"transactions": None, "amount": None, "fees": None}
+
+    curr_start = latest.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_end = curr_start - timedelta(seconds=1)
+    prev_start = prev_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    curr = Transaction.query.filter(Transaction.date >= curr_start).all()
+    prev = Transaction.query.filter(
+        Transaction.date >= prev_start,
+        Transaction.date < curr_start
+    ).all()
+
+    def pct(a, b):
+        return round((a - b) / b * 100, 1) if b else None
+
+    return {
+        "transactions": pct(len(curr), len(prev)),
+        "amount": pct(sum(t.amount for t in curr), sum(t.amount for t in prev)),
+        "fees": pct(sum(t.fee or 0 for t in curr), sum(t.fee or 0 for t in prev)),
+    }
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -147,6 +172,7 @@ def dashboard_data():
         "topType": top_type,
         "typeDistribution": type_dist,
         "recentTransactions": recent,
+        "trends": _month_over_month(),
     })
 
 
@@ -172,6 +198,15 @@ def monthly_trends():
     })
 
 
+@app.route('/api/activity-heatmap')
+def activity_heatmap():
+    rows = db.session.query(
+        db.func.strftime('%Y-%m-%d', Transaction.date).label('day'),
+        db.func.count(Transaction.id).label('count')
+    ).group_by('day').order_by('day').all()
+    return jsonify({row.day: row.count for row in rows})
+
+
 @app.route('/transactions')
 def all_transactions():
     transactions = Transaction.query.order_by(Transaction.date.desc()).all()
@@ -182,8 +217,6 @@ def all_transactions():
             "type": tx.type,
             "amount": tx.amount,
             "fee": tx.fee or 0,
-            "sender": tx.sender,
-            "recipient": tx.recipient,
         }
         for tx in transactions
     ])
