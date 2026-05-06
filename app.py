@@ -245,7 +245,12 @@ def export_csv():
     )
 
 
-if __name__ == '__main__':
+import sys
+if 'pytest' not in sys.modules:
     with app.app_context():
         parse_xml()
-    app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port,
+            debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
