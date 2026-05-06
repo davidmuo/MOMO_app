@@ -102,9 +102,8 @@ document.addEventListener("DOMContentLoaded", () => {
   /* gradient fill for line chart */
   function makeGradient(ctx, h) {
     const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0,   isDark() ? "rgba(249,202,36,.25)" : "rgba(249,202,36,.30)");
-    g.addColorStop(.7,  isDark() ? "rgba(249,202,36,.05)" : "rgba(249,202,36,.08)");
-    g.addColorStop(1,   "rgba(249,202,36,0)");
+    g.addColorStop(0,  isDark() ? "rgba(249,202,36,.18)" : "rgba(249,202,36,.22)");
+    g.addColorStop(1,  "rgba(249,202,36,0)");
     return g;
   }
 
@@ -431,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return `<tr>
       <td class="tx-id">${tx.transaction_id}</td>
       <td>${tx.date}</td>
-      <td><span class="type-badge">${tx.type}</span></td>
+      <td class="type-badge">${tx.type}</td>
       <td class="amount">${fmt(tx.amount)}</td>
       <td class="fee">${fmt(tx.fee)}</td>
     </tr>`;
