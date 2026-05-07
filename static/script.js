@@ -1,153 +1,134 @@
-/* ─────────────────────────────────────────────
-   MoMo Dashboard
-───────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ── DOM refs ── */
-  const fromDateEl = document.getElementById("from-date");
-  const toDateEl   = document.getElementById("to-date");
-  const typeEl     = document.getElementById("transaction-type");
-  const applyBtn   = document.getElementById("apply-filters");
-  const clearBtn   = document.getElementById("clear-filters");
-  const exportBtn  = document.getElementById("export-csv");
-  const searchEl   = document.getElementById("global-search");
-  const tooltip    = document.getElementById("heatmap-tooltip");
+  /* ── refs ── */
+  const fromEl   = document.getElementById("from-date");
+  const toEl     = document.getElementById("to-date");
+  const typeEl   = document.getElementById("transaction-type");
+  const applyBtn = document.getElementById("apply-filters");
+  const clearBtn = document.getElementById("clear-filters");
+  const exportBtn= document.getElementById("export-csv");
+  const searchEl = document.getElementById("global-search");
+  const tooltip  = document.getElementById("heatmap-tooltip");
 
   /* ── state ── */
-  let trendChart   = null;
-  let typeChart    = null;
+  let trendChart = null;
+  let typeChart  = null;
   let activeTrend  = "amounts";
   let activeType   = "doughnut";
   let allTxData    = [];
   let cachedDist   = {};
   let cachedTrends = {};
 
-  const COLORS = [
-    "#F9CA24","#F0932B","#6AB04C","#686DE0",
-    "#E056FD","#22A6B3","#EB4D4B","#7ED6DF",
-    "#30336B","#16A34A"
-  ];
+  const COLORS = ["#F9CA24","#F0932B","#6AB04C","#686DE0","#E056FD","#22A6B3","#EB4D4B","#7ED6DF","#30336B","#16A34A"];
 
-  /* ─────────────────────────────────────────
-     THEME
-  ───────────────────────────────────────── */
-  function isDark() {
-    return document.body.getAttribute("data-theme") === "dark";
-  }
+  /* ── type config ── */
+  const TYPE_CFG = {
+    "Bank Deposit":                  { icon: "fa-building-columns", bg: "#F0FDF4", color: "#16A34A", credit: true  },
+    "Incoming Money":                { icon: "fa-arrow-down-to-line",bg:"#F0FDF4", color: "#16A34A", credit: true  },
+    "Transfer To Mobile Number":     { icon: "fa-arrow-up-right",   bg: "#FEF2F2", color: "#DC2626", credit: false },
+    "Withdrawal from Agent":         { icon: "fa-money-bill-wave",   bg: "#FEF2F2", color: "#DC2626", credit: false },
+    "Payment to Code":               { icon: "fa-qrcode",            bg: "#FEF2F2", color: "#DC2626", credit: false },
+    "Airtime Bill":                  { icon: "fa-phone",             bg: "#FFF7ED", color: "#EA580C", credit: false },
+    "Cash Power":                    { icon: "fa-bolt",              bg: "#FFF7ED", color: "#EA580C", credit: false },
+    "Internet and Voice Bundle":     { icon: "fa-wifi",              bg: "#EFF6FF", color: "#2563EB", credit: false },
+    "OTP Message":                   { icon: "fa-shield-halved",     bg: "#F5F3FF", color: "#7C3AED", credit: false },
+  };
 
-  function chartColors() {
-    return isDark()
-      ? { text: "#8A90AA", grid: "#252A40", tooltip: "#1C2035" }
-      : { text: "#9DA3BC", grid: "#F0F3FB", tooltip: "#1A1D2E" };
-  }
+  const DEFAULT_CFG = { icon: "fa-circle-dot", bg: "#F9FAFB", color: "#6B7280", credit: false };
 
-  function applyTheme(dark) {
-    if (dark) {
-      document.body.setAttribute("data-theme", "dark");
-    } else {
-      document.body.removeAttribute("data-theme");
-    }
-    localStorage.setItem("momo-theme", dark ? "dark" : "light");
+  function typeCfg(type) { return TYPE_CFG[type] || DEFAULT_CFG; }
 
-    document.getElementById("dark-mode-btn").classList.toggle("active", dark);
-    document.getElementById("light-mode-btn").classList.toggle("active", !dark);
-
-    /* re-render charts with new palette */
-    if (Object.keys(cachedDist).length)   renderTypeChart(cachedDist);
-    if (Object.keys(cachedTrends).length) renderTrendChart(cachedTrends);
-  }
-
-  /* restore saved theme */
-  applyTheme(localStorage.getItem("momo-theme") === "dark");
-
-  /* ─────────────────────────────────────────
-     HELPERS
-  ───────────────────────────────────────── */
+  /* ── helpers ── */
   function fmt(n) {
-    return new Intl.NumberFormat("rw-RW", {
-      style: "currency", currency: "RWF", maximumFractionDigits: 0
-    }).format(n);
+    return new Intl.NumberFormat("rw-RW", { style: "currency", currency: "RWF", maximumFractionDigits: 0 }).format(n);
   }
 
   function buildParams() {
     const p = new URLSearchParams();
-    if (fromDateEl.value) p.set("from_date", fromDateEl.value);
-    if (toDateEl.value)   p.set("to_date",   toDateEl.value);
+    if (fromEl.value) p.set("from_date", fromEl.value);
+    if (toEl.value)   p.set("to_date",   toEl.value);
     const t = typeEl.value;
     if (t && t !== "All") p.set("transaction_type", t);
     return p.toString();
   }
 
-  /* count-up animation */
+  function isDark() { return document.body.getAttribute("data-theme") === "dark"; }
+
+  function chartC() {
+    return isDark()
+      ? { text: "#4B5563", grid: "#2A2C36", bg: "#18191F" }
+      : { text: "#9CA3AF", grid: "#F3F4F6", bg: "#FFFFFF" };
+  }
+
+  /* count-up */
   function countUp(el, target, toStr) {
-    const dur = 900;
-    const t0  = performance.now();
+    const dur = 800, t0 = performance.now();
     (function tick(now) {
-      const p     = Math.min((now - t0) / dur, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = toStr(Math.round(target * eased));
+      const p = Math.min((now - t0) / dur, 1);
+      el.textContent = toStr(Math.round(target * (1 - Math.pow(1 - p, 3))));
       if (p < 1) requestAnimationFrame(tick);
     })(t0);
   }
 
   /* trend badge */
-  function renderTrend(el, value, label) {
-    if (value === null || value === undefined) { el.textContent = ""; el.className = "stat-trend"; return; }
-    const up = value >= 0;
-    el.className = "stat-trend " + (up ? "trend-up" : "trend-down");
-    el.innerHTML = `<i class="fas fa-arrow-${up ? "trending-up" : "trending-down"}"></i>
-      ${up ? "+" : ""}${value}% ${label}`;
+  function renderTrend(el, val, label) {
+    if (val === null || val === undefined) { el.textContent = ""; el.className = "sc-trend"; return; }
+    const up = val >= 0;
+    el.className = "sc-trend " + (up ? "trend-up" : "trend-down");
+    el.innerHTML = `<i class="fas fa-arrow-${up ? "up" : "down"}"></i> ${up ? "+" : ""}${val}% ${label}`;
   }
 
-  /* gradient fill for line chart */
-  function makeGradient(ctx, h) {
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0,  isDark() ? "rgba(249,202,36,.18)" : "rgba(249,202,36,.22)");
-    g.addColorStop(1,  "rgba(249,202,36,0)");
+  /* line chart gradient */
+  function mkGrad(ctx) {
+    const g = ctx.createLinearGradient(0, 0, 0, 240);
+    g.addColorStop(0, isDark() ? "rgba(249,202,36,.18)" : "rgba(249,202,36,.22)");
+    g.addColorStop(1, "rgba(249,202,36,0)");
     return g;
   }
 
-  /* ─────────────────────────────────────────
-     DASHBOARD DATA
-  ───────────────────────────────────────── */
-  async function loadDashboard() {
-    try {
-      const res  = await fetch(`/api/dashboard-data?${buildParams()}`);
-      const data = await res.json();
-
-      countUp(document.getElementById("stat-total-tx"),     data.totalTransactions, n => n.toLocaleString());
-      countUp(document.getElementById("stat-total-amount"), data.totalAmount,        n => fmt(n));
-      countUp(document.getElementById("stat-total-fees"),   data.totalFees,          n => fmt(n));
-      document.getElementById("stat-top-type").textContent = data.topType || "—";
-
-      renderTrend(document.getElementById("trend-tx"),     data.trends?.transactions, "vs last month");
-      renderTrend(document.getElementById("trend-amount"), data.trends?.amount,       "vs last month");
-      renderTrend(document.getElementById("trend-fees"),   data.trends?.fees,         "vs last month");
-
-      cachedDist = data.typeDistribution;
-      renderTypeChart(data.typeDistribution);
-      renderRecentTable(data.recentTransactions);
-    } catch (e) { console.error("dashboard:", e); }
+  /* ── theme ── */
+  function applyTheme(dark) {
+    dark ? document.body.setAttribute("data-theme","dark") : document.body.removeAttribute("data-theme");
+    localStorage.setItem("momo-theme", dark ? "dark" : "light");
+    document.getElementById("dark-mode-btn").classList.toggle("active", dark);
+    document.getElementById("light-mode-btn").classList.toggle("active", !dark);
+    if (Object.keys(cachedDist).length)   renderTypeChart(cachedDist);
+    if (Object.keys(cachedTrends).length) renderTrendChart(cachedTrends);
   }
 
-  /* ─────────────────────────────────────────
-     MONTHLY TRENDS
-  ───────────────────────────────────────── */
+  applyTheme(localStorage.getItem("momo-theme") === "dark");
+
+  /* ── DASHBOARD DATA ── */
+  async function loadDashboard() {
+    const res  = await fetch(`/api/dashboard-data?${buildParams()}`);
+    const data = await res.json();
+
+    countUp(document.getElementById("stat-total-tx"),     data.totalTransactions, n => n.toLocaleString());
+    countUp(document.getElementById("stat-total-amount"), data.totalAmount,        n => fmt(n));
+    countUp(document.getElementById("stat-total-fees"),   data.totalFees,          n => fmt(n));
+    document.getElementById("stat-top-type").textContent = data.topType || "—";
+
+    renderTrend(document.getElementById("trend-tx"),     data.trends?.transactions, "vs last month");
+    renderTrend(document.getElementById("trend-amount"), data.trends?.amount,       "vs last month");
+    renderTrend(document.getElementById("trend-fees"),   data.trends?.fees,         "vs last month");
+
+    cachedDist = data.typeDistribution;
+    renderTypeChart(data.typeDistribution);
+  }
+
+  /* ── TRENDS ── */
   async function loadTrends() {
-    try {
-      const res  = await fetch(`/api/monthly-trends?${buildParams()}`);
-      const data = await res.json();
-      cachedTrends = data;
-      renderTrendChart(data);
-    } catch (e) { console.error("trends:", e); }
+    const res  = await fetch(`/api/monthly-trends?${buildParams()}`);
+    const data = await res.json();
+    cachedTrends = data;
+    renderTrendChart(data);
   }
 
   function renderTrendChart(data) {
     if (trendChart) trendChart.destroy();
-
     const canvas = document.getElementById("trendChart");
     const ctx    = canvas.getContext("2d");
-    const c      = chartColors();
+    const c      = chartC();
     const labels = { amounts: "Volume (RWF)", counts: "Transactions", fees: "Fees (RWF)" };
 
     trendChart = new Chart(ctx, {
@@ -157,74 +138,48 @@ document.addEventListener("DOMContentLoaded", () => {
         datasets: [{
           label: labels[activeTrend],
           data:  data[activeTrend] || [],
-          borderColor:     "#F9CA24",
-          borderWidth:     2.5,
-          backgroundColor: makeGradient(ctx, 260),
+          borderColor: "#F9CA24",
+          borderWidth: 2.5,
+          backgroundColor: mkGrad(ctx),
           pointBackgroundColor: "#F9CA24",
-          pointBorderColor:     isDark() ? "#151929" : "#fff",
-          pointBorderWidth: 2.5,
-          pointRadius:      5,
+          pointBorderColor: isDark() ? "#18191F" : "#fff",
+          pointBorderWidth: 2,
+          pointRadius: 5,
           pointHoverRadius: 7,
-          fill:    true,
+          fill: true,
           tension: 0.42,
         }],
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: { display: false },
           datalabels: { display: false },
           tooltip: {
-            backgroundColor: c.tooltip,
+            backgroundColor: isDark() ? "#1E2028" : "#111827",
             titleColor: c.text,
-            bodyColor: isDark() ? "#EEF0F8" : "#fff",
-            padding: 12,
-            cornerRadius: 10,
-            borderColor: isDark() ? "#252A40" : "transparent",
-            borderWidth: 1,
-            callbacks: {
-              label: ctx => activeTrend === "counts"
-                ? `  ${ctx.raw} transactions`
-                : `  ${fmt(ctx.raw)}`
-            }
+            bodyColor: isDark() ? "#F3F4F6" : "#fff",
+            padding: 10, cornerRadius: 8,
+            callbacks: { label: ctx => activeTrend === "counts" ? `  ${ctx.raw} txns` : `  ${fmt(ctx.raw)}` }
           }
         },
         scales: {
-          x: {
-            grid:   { display: false },
-            border: { display: false },
-            ticks:  { color: c.text, font: { size: 12, weight: "500" } },
-          },
-          y: {
-            grid:   { color: c.grid },
-            border: { display: false },
-            ticks:  {
-              color: c.text,
-              font:  { size: 11 },
-              maxTicksLimit: 5,
-              callback: v => activeTrend === "counts" ? v : fmt(v),
-            }
-          }
+          x: { grid: { display: false }, border: { display: false }, ticks: { color: c.text, font: { size: 11 } } },
+          y: { grid: { color: c.grid  }, border: { display: false }, ticks: { color: c.text, font: { size: 11 }, maxTicksLimit: 5, callback: v => activeTrend === "counts" ? v : fmt(v) } }
         }
       },
       plugins: [ChartDataLabels],
     });
   }
 
-  /* ─────────────────────────────────────────
-     TYPE CHART  (doughnut / bar)
-  ───────────────────────────────────────── */
+  /* ── TYPE CHART ── */
   function renderTypeChart(dist) {
     if (typeChart) typeChart.destroy();
-
-    const labels = Object.keys(dist);
-    const values = Object.values(dist);
+    const labels = Object.keys(dist), values = Object.values(dist);
     const total  = values.reduce((a, b) => a + b, 0);
-    const canvas = document.getElementById("typeChart");
-    const ctx    = canvas.getContext("2d");
-    const c      = chartColors();
+    const ctx    = document.getElementById("typeChart").getContext("2d");
+    const c      = chartC();
     const isDough = activeType === "doughnut";
 
     typeChart = new Chart(ctx, {
@@ -234,84 +189,48 @@ document.addEventListener("DOMContentLoaded", () => {
         datasets: [{
           data: values,
           backgroundColor: COLORS,
-          borderColor:     isDough ? (isDark() ? "#151929" : "#fff") : COLORS,
-          borderWidth:     isDough ? 2 : 0,
-          borderRadius:    isDough ? 0 : 5,
-          hoverOffset:     isDough ? 8 : 0,
+          borderColor: isDough ? (isDark() ? "#18191F" : "#fff") : COLORS,
+          borderWidth: isDough ? 2 : 0,
+          borderRadius: isDough ? 0 : 4,
+          hoverOffset: isDough ? 6 : 0,
         }],
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         cutout: isDough ? "70%" : 0,
         plugins: {
-          legend: {
-            position: "bottom",
-            labels: {
-              font:      { size: 11, weight: "500" },
-              color:     c.text,
-              padding:   14,
-              boxWidth:  10,
-              boxHeight: 10,
-              usePointStyle: true,
-              pointStyle: "circle",
-            }
-          },
+          legend: { position: "bottom", labels: { font: { size: 11, weight: "500" }, color: c.text, padding: 12, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "circle" } },
           datalabels: {
             display: ctx => (ctx.dataset.data[ctx.dataIndex] / total) > 0.06,
-            color:   isDough ? "#fff" : "#fff",
-            font:    { weight: "700", size: 11 },
-            anchor:  isDough ? "center" : "end",
-            align:   isDough ? "center" : "end",
-            offset:  isDough ? 0 : 4,
+            color: "#fff", font: { weight: "700", size: 11 },
             formatter: v => `${Math.round(v / total * 100)}%`,
           },
           tooltip: {
-            backgroundColor: c.tooltip,
-            titleColor:      c.text,
-            bodyColor:       isDark() ? "#EEF0F8" : "#fff",
-            padding:         12,
-            cornerRadius:    10,
-            callbacks: {
-              label: ctx =>
-                `  ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw / total * 100)}%)`
-            }
+            backgroundColor: isDark() ? "#1E2028" : "#111827",
+            titleColor: c.text, bodyColor: isDark() ? "#F3F4F6" : "#fff",
+            padding: 10, cornerRadius: 8,
+            callbacks: { label: ctx => `  ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/total*100)}%)` }
           }
         },
-        ...(isDough ? {} : {
-          scales: {
-            x: {
-              grid:   { display: false },
-              border: { display: false },
-              ticks:  { color: c.text, font: { size: 10 }, maxRotation: 40 }
-            },
-            y: {
-              grid:   { color: c.grid },
-              border: { display: false },
-              ticks:  { color: c.text, font: { size: 11 }, maxTicksLimit: 5 }
-            }
-          }
-        })
+        ...(isDough ? {} : { scales: {
+          x: { grid:{display:false}, border:{display:false}, ticks:{color:c.text,font:{size:10},maxRotation:35} },
+          y: { grid:{color:c.grid},  border:{display:false}, ticks:{color:c.text,font:{size:11},maxTicksLimit:5} }
+        }})
       },
-      /* center-text plugin for doughnut */
       plugins: [ChartDataLabels,
         ...(isDough ? [{
-          id: "centerText",
+          id: "center",
           afterDraw(chart) {
             const { width, height, ctx } = chart;
+            const cx = width / 2, cy = height / 2 - (chart.legend?.height || 0) / 2;
             ctx.save();
-            const cx = width / 2;
-            const cy = height / 2 - (chart.legend.height / 2);
-
-            ctx.font = `800 26px Inter, sans-serif`;
-            ctx.fillStyle = isDark() ? "#EEF0F8" : "#1A1D2E";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(total, cx, cy - 10);
-
-            ctx.font = `500 12px Inter, sans-serif`;
-            ctx.fillStyle = isDark() ? "#8A90AA" : "#9DA3BC";
-            ctx.fillText("transactions", cx, cy + 14);
+            ctx.font = `800 24px Inter,sans-serif`;
+            ctx.fillStyle = isDark() ? "#F3F4F6" : "#111827";
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(total, cx, cy - 9);
+            ctx.font = `500 11px Inter,sans-serif`;
+            ctx.fillStyle = isDark() ? "#9CA3AF" : "#9CA3AF";
+            ctx.fillText("transactions", cx, cy + 13);
             ctx.restore();
           }
         }] : [])
@@ -319,162 +238,159 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ─────────────────────────────────────────
-     ACTIVITY HEATMAP
-  ───────────────────────────────────────── */
+  /* ── HEATMAP ── */
   async function loadHeatmap() {
-    try {
-      const res  = await fetch("/api/activity-heatmap");
-      const data = await res.json();
-      renderHeatmap(data);
-    } catch (e) { console.error("heatmap:", e); }
+    const res  = await fetch("/api/activity-heatmap");
+    const data = await res.json();
+    renderHeatmap(data);
   }
 
-  function heatColor(count) {
-    if (!count)    return isDark() ? "#252A40" : "#EAECF2";
-    if (count < 2) return isDark() ? "#4A3800" : "#FFF0A0";
-    if (count < 3) return "#F9CA24";
-    if (count < 5) return "#E1A800";
+  function heatColor(n) {
+    if (!n)    return isDark() ? "#2A2C36" : "#EAECF2";
+    if (n < 2) return "#FFF0A0";
+    if (n < 3) return "#F9CA24";
+    if (n < 5) return "#E1A800";
     return "#B8860B";
   }
 
   function renderHeatmap(data) {
-    const grid   = document.getElementById("heatmap-grid");
-    const months = document.getElementById("heatmap-months");
-    grid.innerHTML   = "";
-    months.innerHTML = "";
+    const grid = document.getElementById("heatmap-grid");
+    const mths = document.getElementById("heatmap-months");
+    grid.innerHTML = mths.innerHTML = "";
 
     const dates = Object.keys(data).sort();
     if (!dates.length) return;
-
-    const start = new Date(dates[0]);
-    const end   = new Date(dates[dates.length - 1]);
-
-    /* rewind to Monday */
+    const start = new Date(dates[0]), end = new Date(dates[dates.length - 1]);
     const first = new Date(start);
     first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
 
-    let cur = new Date(first);
-    let col = 0;
-    const monthPos = {};
+    let cur = new Date(first), col = 0, monthPos = {};
 
     while (cur <= end) {
       const colEl = document.createElement("div");
       colEl.className = "heatmap-col";
-
       for (let d = 0; d < 7; d++) {
-        const cell    = document.createElement("div");
+        const cell = document.createElement("div");
         cell.className = "heatmap-cell";
-        const key     = cur.toISOString().split("T")[0];
+        const key = cur.toISOString().split("T")[0];
         const inRange = cur >= start && cur <= end;
         const count   = data[key] || 0;
-
         cell.style.background = inRange ? heatColor(count) : "transparent";
-
         if (inRange) {
-          const dateLabel = cur.toLocaleDateString("en", { weekday:"short", year:"numeric", month:"short", day:"numeric" });
-          const countLabel = count === 1 ? "1 transaction" : `${count} transactions`;
-
+          const dl = cur.toLocaleDateString("en", { weekday:"short", month:"short", day:"numeric" });
           cell.addEventListener("mouseenter", () => {
-            tooltip.textContent = `${dateLabel} — ${countLabel}`;
+            tooltip.textContent = `${dl} — ${count || "no"} transaction${count !== 1 ? "s" : ""}`;
             tooltip.classList.add("visible");
           });
-          cell.addEventListener("mousemove", e => {
-            tooltip.style.left = (e.clientX + 14) + "px";
-            tooltip.style.top  = (e.clientY - 36) + "px";
-          });
+          cell.addEventListener("mousemove", e => { tooltip.style.left = (e.clientX+12)+"px"; tooltip.style.top = (e.clientY-32)+"px"; });
           cell.addEventListener("mouseleave", () => tooltip.classList.remove("visible"));
-
-          /* track first occurrence of each month */
           if (d === 0) {
             const mn = cur.toLocaleDateString("en", { month: "short" });
             if (cur.getDate() <= 7 && !monthPos[mn]) monthPos[mn] = col;
           }
         }
-
         colEl.appendChild(cell);
         cur.setDate(cur.getDate() + 1);
       }
-
       grid.appendChild(colEl);
       col++;
     }
 
-    /* month labels */
-    const cellW = 15;
-    let lastCol = -4;
+    const cw = 15;
+    let last = -4;
     Object.entries(monthPos).forEach(([name, c]) => {
-      if (c - lastCol < 3) return; // skip crowded labels
-      lastCol = c;
+      if (c - last < 3) return;
+      last = c;
       const lbl = document.createElement("div");
-      lbl.className    = "heatmap-month-label";
-      lbl.textContent  = name;
-      lbl.style.width  = (cellW * 4) + "px";
-      lbl.style.marginLeft = (c === 0 ? 0 : (c * cellW)) + "px";
-      months.appendChild(lbl);
+      lbl.className = "heatmap-month-label";
+      lbl.textContent = name;
+      lbl.style.width = (cw * 4) + "px";
+      lbl.style.marginLeft = (c * cw) + "px";
+      mths.appendChild(lbl);
     });
   }
 
-  /* ─────────────────────────────────────────
-     ALL TRANSACTIONS
-  ───────────────────────────────────────── */
-  async function loadAllTransactions() {
-    try {
-      const res = await fetch("/transactions");
-      allTxData = await res.json();
-      renderAllTable(allTxData);
-    } catch (e) { console.error("all tx:", e); }
+  /* ── RIGHT PANEL (recent, date-grouped) ── */
+  async function loadRightPanel() {
+    const res  = await fetch("/transactions");
+    const all  = await res.json();
+    allTxData  = all;
+    renderAllTable(all);
+    renderRightPanel(all.slice(0, 40));
   }
 
-  function rowHTML(tx) {
-    return `<tr>
-      <td class="tx-id">${tx.transaction_id}</td>
-      <td>${tx.date}</td>
-      <td class="type-badge">${tx.type}</td>
-      <td class="amount">${fmt(tx.amount)}</td>
-      <td class="fee">${fmt(tx.fee)}</td>
-    </tr>`;
+  function renderRightPanel(txs) {
+    const body = document.getElementById("rp-body");
+    if (!txs.length) { body.innerHTML = `<div class="empty-cell">No transactions</div>`; return; }
+
+    /* group by date */
+    const groups = {};
+    txs.forEach(tx => {
+      const d = tx.date.split(" ")[0];
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(tx);
+    });
+
+    body.innerHTML = Object.entries(groups).map(([date, rows]) => {
+      const label = new Date(date + "T00:00:00").toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" });
+      const rowsHTML = rows.map(tx => {
+        const cfg    = typeCfg(tx.type);
+        const credit = cfg.credit;
+        const amtStr = (credit ? "+" : "−") + fmt(tx.amount);
+        const time   = tx.date.split(" ")[1] || "";
+        return `
+          <div class="tx-row">
+            <div class="tx-type-icon" style="background:${cfg.bg};color:${cfg.color};">
+              <i class="fas ${cfg.icon}"></i>
+            </div>
+            <div class="tx-info">
+              <div class="tx-name">${tx.type}</div>
+              <div class="tx-time">${time}</div>
+            </div>
+            <div class="tx-amount ${credit ? "credit" : "debit"}">${amtStr}</div>
+          </div>`;
+      }).join("");
+
+      return `<div class="tx-date-group">
+        <div class="tx-date-label">${label}</div>
+      </div>${rowsHTML}`;
+    }).join("");
   }
 
+  /* ── ALL TRANSACTIONS TABLE ── */
   function renderAllTable(rows) {
     const tbody = document.getElementById("transaction-table-body");
     const count = document.getElementById("record-count");
-    count.textContent = `${rows.length} records`;
+    if (count) count.textContent = `${rows.length} records`;
     tbody.innerHTML = rows.length
-      ? rows.map(rowHTML).join("")
+      ? rows.map(tx => `<tr>
+          <td class="tx-id">${tx.transaction_id}</td>
+          <td>${tx.date}</td>
+          <td class="type">${tx.type}</td>
+          <td class="amount">${fmt(tx.amount)}</td>
+          <td class="fee">${fmt(tx.fee)}</td>
+        </tr>`).join("")
       : `<tr><td colspan="5" class="empty-cell">No transactions found</td></tr>`;
   }
 
-  function renderRecentTable(rows) {
-    const tbody = document.getElementById("recent-transactions-body");
-    tbody.innerHTML = rows?.length
-      ? rows.slice(0, 10).map(rowHTML).join("")
-      : `<tr><td colspan="5" class="empty-cell">No transactions found</td></tr>`;
-  }
-
-  /* ─────────────────────────────────────────
-     SCROLL SPY
-  ───────────────────────────────────────── */
+  /* ── SCROLL SPY ── */
   function initScrollSpy() {
-    const ids = ["overview","analytics","trends","activity","transactions","all-transactions"];
+    const ids = ["overview","trends","activity","all-transactions"];
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => {
         if (e.isIntersecting) {
-          document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-          document.querySelector(`.nav-link[href="#${e.target.id}"]`)?.classList.add("active");
+          document.querySelectorAll(".nav-icon").forEach(l => l.classList.remove("active"));
+          document.querySelector(`.nav-icon[href="#${e.target.id}"]`)?.classList.add("active");
         }
       });
     }, { rootMargin: "-25% 0px -65% 0px" });
-
     ids.map(id => document.getElementById(id)).filter(Boolean).forEach(el => obs.observe(el));
   }
 
-  /* ─────────────────────────────────────────
-     EVENTS
-  ───────────────────────────────────────── */
-
+  /* ── EVENTS ── */
   document.getElementById("light-mode-btn").addEventListener("click", () => applyTheme(false));
   document.getElementById("dark-mode-btn").addEventListener("click",  () => applyTheme(true));
+  document.getElementById("rp-refresh")?.addEventListener("click",    () => loadRightPanel());
 
   document.querySelectorAll("#trend-tabs .pill").forEach(btn =>
     btn.addEventListener("click", () => {
@@ -494,38 +410,24 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   );
 
-  applyBtn.addEventListener("click", () => { loadDashboard(); loadTrends(); });
-
-  clearBtn.addEventListener("click", () => {
-    fromDateEl.value = toDateEl.value = "";
-    typeEl.value = "All";
-    loadDashboard();
-    loadTrends();
-  });
-
-  exportBtn.addEventListener("click", () => {
-    window.location.href = `/api/export-csv?${buildParams()}`;
-  });
+  applyBtn.addEventListener("click",  () => { loadDashboard(); loadTrends(); });
+  clearBtn.addEventListener("click",  () => { fromEl.value = toEl.value = ""; typeEl.value = "All"; loadDashboard(); loadTrends(); });
+  exportBtn.addEventListener("click", () => { window.location.href = `/api/export-csv?${buildParams()}`; });
 
   searchEl.addEventListener("input", () => {
     const q = searchEl.value.toLowerCase().trim();
-    const filtered = q
-      ? allTxData.filter(tx =>
-          tx.transaction_id.toLowerCase().includes(q) ||
-          tx.type.toLowerCase().includes(q) ||
-          tx.date.includes(q))
-      : allTxData;
+    const filtered = q ? allTxData.filter(tx =>
+      tx.transaction_id.toLowerCase().includes(q) ||
+      tx.type.toLowerCase().includes(q) ||
+      tx.date.includes(q)) : allTxData;
     renderAllTable(filtered);
-    if (q.length > 1)
-      document.getElementById("all-transactions")?.scrollIntoView({ behavior: "smooth" });
+    if (q.length > 1) document.getElementById("all-transactions")?.scrollIntoView({ behavior: "smooth" });
   });
 
-  /* ─────────────────────────────────────────
-     INIT
-  ───────────────────────────────────────── */
+  /* ── INIT ── */
   loadDashboard();
   loadTrends();
   loadHeatmap();
-  loadAllTransactions();
+  loadRightPanel();
   initScrollSpy();
 });
