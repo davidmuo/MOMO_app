@@ -17,15 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ── type config ── */
   const TCFG = {
-    "Bank Deposit":               { icon:"fa-building-columns", bg:"#F0FDF4", color:"#16A34A", credit:true  },
-    "Incoming Money":             { icon:"fa-arrow-down-to-line",bg:"#F0FDF4", color:"#16A34A", credit:true  },
-    "Transfer To Mobile Number":  { icon:"fa-arrow-up-right",   bg:"#FEF2F2", color:"#DC2626", credit:false },
-    "Withdrawal from Agent":      { icon:"fa-money-bill-wave",  bg:"#FEF2F2", color:"#DC2626", credit:false },
-    "Payment to Code":            { icon:"fa-qrcode",           bg:"#FFF7ED", color:"#EA580C", credit:false },
-    "Airtime Bill":               { icon:"fa-phone",            bg:"#FFF7ED", color:"#EA580C", credit:false },
-    "Cash Power":                 { icon:"fa-bolt",             bg:"#FEFCE8", color:"#CA8A04", credit:false },
-    "Internet and Voice Bundle":  { icon:"fa-wifi",             bg:"#EFF6FF", color:"#2563EB", credit:false },
-    "OTP Message":                { icon:"fa-shield-halved",    bg:"#F5F3FF", color:"#7C3AED", credit:false },
+    "Bank Deposit":               { icon:"fa-building-columns",     bg:"#F0FDF4", color:"#16A34A", credit:true  },
+    "Incoming Money":             { icon:"fa-circle-arrow-down",    bg:"#F0FDF4", color:"#16A34A", credit:true  },
+    "Transfer To Mobile Number":  { icon:"fa-paper-plane",          bg:"#FEF2F2", color:"#DC2626", credit:false },
+    "Withdrawal from Agent":      { icon:"fa-money-bill-wave",      bg:"#FEF2F2", color:"#DC2626", credit:false },
+    "Payment to Code":            { icon:"fa-qrcode",               bg:"#FFF7ED", color:"#EA580C", credit:false },
+    "Airtime Bill":               { icon:"fa-phone",                bg:"#FFF7ED", color:"#EA580C", credit:false },
+    "Cash Power":                 { icon:"fa-bolt",                 bg:"#FEFCE8", color:"#CA8A04", credit:false },
+    "Internet and Voice Bundle":  { icon:"fa-wifi",                 bg:"#EFF6FF", color:"#2563EB", credit:false },
+    "OTP Message":                { icon:"fa-shield-halved",        bg:"#F5F3FF", color:"#7C3AED", credit:false },
   };
   const DEF = { icon:"fa-circle-dot", bg:"#F9FAFB", color:"#6B7280", credit:false };
   const tc  = t => TCFG[t] || DEF;
@@ -99,6 +99,24 @@ document.addEventListener("DOMContentLoaded", () => {
     cachedDist = data.typeDistribution;
     renderFeaturedCard(data.typeDistribution, data.totalTransactions);
     renderTypeBreakdown(data.typeDistribution, data.totalTransactions);
+    renderMiniTypes(data.typeDistribution, data.totalTransactions);
+  }
+
+  /* ── MINI TYPE BARS (inside stats card) ── */
+  function renderMiniTypes(dist, total) {
+    const el = document.getElementById("ts-mini-types");
+    if (!el) return;
+    const top5 = Object.entries(dist).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    el.innerHTML = top5.map(([name, count]) => {
+      const pct = Math.round(count / total * 100);
+      const cfg = tc(name);
+      const shortName = name.replace("To Mobile Number","").replace("from Agent","").replace("and Voice","").trim();
+      return `<div class="mtt-row">
+        <span class="mtt-name">${shortName}</span>
+        <div class="mtt-bar"><div class="mtt-fill" style="width:${pct}%;background:${cfg.color};"></div></div>
+        <span class="mtt-pct">${pct}%</span>
+      </div>`;
+    }).join("");
   }
 
   /* ── VOLUME BAR CHART ── */

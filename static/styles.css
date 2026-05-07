@@ -230,7 +230,7 @@ input,select{font-family:inherit;outline:none}
 /* ── Bento grid ── */
 .bento {
   display: grid;
-  grid-template-columns: 280px 1fr 300px;
+  grid-template-columns: 1fr 1.3fr 1fr;
   grid-template-rows: auto auto;
   gap: 16px;
   padding: 20px 28px;
@@ -325,7 +325,7 @@ input,select{font-family:inherit;outline:none}
 .trend-flat { color: var(--t3); }
 
 /* ── Card 1 : Volume ── */
-.vol-chart-wrap { height: 110px; margin: 16px 0 12px; }
+.vol-chart-wrap { height: 135px; margin: 16px 0 12px; }
 #volumeChart { width: 100% !important; height: 100% !important; }
 
 .vol-footer {
@@ -456,6 +456,21 @@ input,select{font-family:inherit;outline:none}
 .bf-btn:hover { opacity: .85; }
 
 [data-theme="dark"] .bf-btn { background: var(--yellow); color: #111; }
+
+/* ── Stats mini type bars ── */
+.ts-divider { height:1px; background:var(--border); margin:16px 0 12px; }
+
+.ts-mini-label { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--t3); margin-bottom:10px; }
+
+.mtt-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+
+.mtt-name { font-size:11.5px; color:var(--t2); font-weight:500; width:90px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; }
+
+.mtt-bar { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+
+.mtt-fill { height:100%; border-radius:3px; opacity:.8; transition:width .6s ease; }
+
+.mtt-pct { font-size:11px; font-weight:600; color:var(--t3); width:28px; text-align:right; flex-shrink:0; }
 
 /* ── Card 4 : Breakdown ── */
 .type-row {
