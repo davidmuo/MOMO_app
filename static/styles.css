@@ -67,6 +67,7 @@ body {
   font-size: 14px;
   line-height: 1.5;
   display: flex;
+  zoom: 0.9;
   transition: background var(--t), color var(--t);
 }
 
