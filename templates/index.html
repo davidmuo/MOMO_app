@@ -85,34 +85,43 @@
   <!-- Card 2 : Transaction Stats -->
   <div class="bc bc-stats">
     <p class="bc-label">Transaction Overview</p>
-    <div class="ts-big">
-      <h2 class="bc-big" id="stat-total-tx">—</h2>
-      <span class="ts-unit">transactions</span>
+
+    <!-- Hero number -->
+    <div class="ts-hero">
+      <div>
+        <div class="ts-big">
+          <h2 class="bc-big" id="stat-total-tx">—</h2>
+          <span class="ts-unit">transactions</span>
+        </div>
+        <p class="sc-trend" id="trend-tx"></p>
+      </div>
+      <div class="ts-hero-icon"><i class="fas fa-receipt"></i></div>
     </div>
-    <p class="sc-trend" id="trend-tx"></p>
-    <div class="ts-items">
-      <div class="ts-item">
-        <div class="ts-icon" style="background:#FFF8DC;color:#D4A017;"><i class="fas fa-coins"></i></div>
-        <div>
-          <p class="ts-val" id="stat-total-fees">—</p>
-          <p class="ts-key">Total Fees Paid</p>
-        </div>
+
+    <div class="ts-divider"></div>
+
+    <!-- 2×2 stat grid -->
+    <div class="ts-grid">
+      <div class="ts-grid-item">
+        <p class="tsg-label">Total Volume</p>
+        <p class="tsg-val" id="stat-total-amount">—</p>
+        <p class="sc-trend" id="trend-amount" style="margin-top:4px;font-size:10.5px;"></p>
       </div>
-      <div class="ts-item">
-        <div class="ts-icon" style="background:#F0FDF4;color:#16A34A;"><i class="fas fa-arrow-trend-up"></i></div>
-        <div>
-          <p class="ts-val" id="stat-avg-tx">—</p>
-          <p class="ts-key">Avg per Transaction</p>
-        </div>
+      <div class="ts-grid-item">
+        <p class="tsg-label">Total Fees</p>
+        <p class="tsg-val" id="stat-total-fees">—</p>
+        <p class="sc-trend" id="trend-fees" style="margin-top:4px;font-size:10.5px;"></p>
       </div>
-      <div class="ts-item">
-        <div class="ts-icon" style="background:#F5F3FF;color:#7C3AED;"><i class="fas fa-calendar-check"></i></div>
-        <div>
-          <p class="ts-val" id="stat-best-month">—</p>
-          <p class="ts-key">Busiest Month</p>
-        </div>
+      <div class="ts-grid-item">
+        <p class="tsg-label">Avg per Transaction</p>
+        <p class="tsg-val" id="stat-avg-tx">—</p>
+      </div>
+      <div class="ts-grid-item">
+        <p class="tsg-label">Busiest Month</p>
+        <p class="tsg-val" id="stat-best-month">—</p>
       </div>
     </div>
+
     <div class="ts-divider"></div>
     <p class="ts-mini-label">Top types</p>
     <div id="ts-mini-types"></div>

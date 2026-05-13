@@ -95,6 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     trend(document.getElementById("trend-tx"),     data.trends?.transactions, "vs last month");
     trend(document.getElementById("trend-amount"), data.trends?.amount,       "vs last month");
+    trend(document.getElementById("trend-fees"),   data.trends?.fees,         "vs last month");
 
     cachedDist = data.typeDistribution;
     renderFeaturedCard(data.typeDistribution, data.totalTransactions);
