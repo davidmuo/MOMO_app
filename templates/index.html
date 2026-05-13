@@ -67,14 +67,12 @@
 
   <!-- Card 1 : Monthly Volume -->
   <div class="bc bc-volume">
-    <div class="bc-top">
-      <div>
-        <p class="bc-label">Monthly Volume</p>
-        <h2 class="bc-big" id="stat-total-amount">—</h2>
-        <p class="bc-sub">total across all months</p>
-      </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <p class="bc-label" style="margin-bottom:0;">Monthly Volume</p>
       <span class="bc-tag">Last 6 months</span>
     </div>
+    <h2 class="bc-big" id="stat-total-amount">—</h2>
+    <p class="bc-sub">total across all months</p>
     <div class="vol-chart-wrap">
       <canvas id="volumeChart"></canvas>
     </div>
